@@ -110,6 +110,23 @@ const generateEditor = (csv) => {
   const editorBody = document.getElementById('editorBody');
   editorBody.innerHTML = '';
 
+  const uploadLabel = document.createElement('label');
+  uploadLabel.className = 'editor-input-label';
+  uploadLabel.innerHTML = 'Upload CSV <input type="file" id="csvUpload" accept=".csv" />';
+  editorBody.appendChild(uploadLabel);
+
+  const urlLabel = document.createElement('label');
+  urlLabel.className = 'editor-input-label';
+  urlLabel.innerHTML = 'Importar URL (Google Sheets ou CSV público) <input type="url" id="csvUrl" placeholder="https://docs.google.com/spreadsheets/d/ID/export?format=csv&gid=0" />';
+  editorBody.appendChild(urlLabel);
+
+  const importButton = document.createElement('button');
+  importButton.type = 'button';
+  importButton.id = 'importUrl';
+  importButton.className = 'secondary';
+  importButton.textContent = 'Importar URL';
+  editorBody.appendChild(importButton);
+
   const textArea = document.createElement('textarea');
   textArea.rows = 12;
   textArea.value = csv;
@@ -120,8 +137,39 @@ const generateEditor = (csv) => {
   info.style.color = 'var(--muted)';
   info.style.fontSize = '0.95rem';
   info.style.margin = '0';
-  info.textContent = 'Use este campo para editar os valores em CSV e salvar localmente no navegador.';
+  info.textContent = 'Você pode fazer upload de um arquivo CSV ou colar o link de uma planilha pública.
+  Depois clique em Salvar no navegador para aplicar os dados.';
   editorBody.appendChild(info);
+
+  const fileInput = uploadLabel.querySelector('input');
+  fileInput.addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      textArea.value = reader.result;
+    };
+    reader.readAsText(file, 'UTF-8');
+  });
+
+  importButton.addEventListener('click', () => {
+    const urlInput = document.getElementById('csvUrl');
+    const url = urlInput.value.trim();
+    if (!url) return;
+    fetch(url)
+      .then((res) => {
+        if (!res.ok) throw new Error('URL inválida ou planilha indisponível');
+        return res.text();
+      })
+      .then((csvText) => {
+        textArea.value = csvText;
+        applyData(csvText);
+      })
+      .catch((error) => {
+        console.error(error);
+        alert('Não foi possível importar o CSV. Verifique a URL.');
+      });
+  });
 };
 
 const applyData = (csvText) => {
@@ -137,20 +185,14 @@ const initEditor = () => {
   const downloadCsv = document.getElementById('downloadCsv');
   const editorOverlay = document.getElementById('editorOverlay');
 
-  const csvSource = loadLocalCsv() || defaultCsv;
-
   const open = () => {
     editorOverlay.classList.remove('hidden');
     if (!document.getElementById('dataCsvEditor')) {
-      if (csvSource.startsWith('http')) {
-        fetch(csvSource).then((res) => res.text()).then(generateEditor);
+      const localCsv = loadLocalCsv();
+      if (localCsv) {
+        generateEditor(localCsv);
       } else {
-        const localCsv = loadLocalCsv();
-        if (localCsv) {
-          generateEditor(localCsv);
-        } else {
-          fetch(defaultCsv).then((res) => res.text()).then(generateEditor);
-        }
+        fetch(defaultCsv).then((res) => res.text()).then(generateEditor);
       }
     }
   };
@@ -177,7 +219,8 @@ const initEditor = () => {
   });
 
   downloadCsv.addEventListener('click', () => {
-    const csvText = document.getElementById('dataCsvEditor')?.value || loadLocalCsv() || defaultCsv;
+    const csvText = document.getElementById('dataCsvEditor')?.value || loadLocalCsv() || '';
+    if (!csvText) return;
     const link = document.createElement('a');
     link.href = URL.createObjectURL(new Blob([csvText], { type: 'text/csv' }));
     link.download = 'dashboard-data.csv';
@@ -187,10 +230,6 @@ const initEditor = () => {
 
 const initialLoad = () => {
   const localCsv = loadLocalCsv();
-  if (localCsv) {
-    applyData(localCsv);
-    return;
-  }
 
   if (source) {
     fetch(source)
@@ -209,21 +248,27 @@ const initialLoad = () => {
         );
         console.error(error);
       });
-  } else {
-    fetch(defaultCsv)
-      .then((response) => {
-        if (!response.ok) throw new Error('CSV não encontrado');
-        return response.text();
-      })
-      .then((csvText) => applyData(csvText))
-      .catch((error) => {
-        document.querySelector('.dashboard-shell').insertAdjacentHTML(
-          'afterbegin',
-          '<p class="error-banner">Não foi possível carregar os dados da planilha.</p>'
-        );
-        console.error(error);
-      });
+    return;
   }
+
+  if (localCsv) {
+    applyData(localCsv);
+    return;
+  }
+
+  fetch(defaultCsv)
+    .then((response) => {
+      if (!response.ok) throw new Error('CSV não encontrado');
+      return response.text();
+    })
+    .then((csvText) => applyData(csvText))
+    .catch((error) => {
+      document.querySelector('.dashboard-shell').insertAdjacentHTML(
+        'afterbegin',
+        '<p class="error-banner">Não foi possível carregar os dados da planilha.</p>'
+      );
+      console.error(error);
+    });
 };
 
 window.addEventListener('DOMContentLoaded', () => {
