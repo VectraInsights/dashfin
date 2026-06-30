@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard Financeiro Geral</title>
+    <meta name="description" content="Dashboard financeiro fintech com KPIs, tendência de receita e análise de saúde da empresa." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="background-glow glow-1"></div>
+    <div class="background-glow glow-2"></div>
+
+    <main class="dashboard-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Painel financeiro</p>
+          <h1>Dashboard Geral Financeiro</h1>
+        </div>
+        <div class="topbar-actions">
+          <div class="pill">+12,4% vs. mês anterior</div>
+          <button>Exportar relatório</button>
+        </div>
+      </header>
+
+      <section class="hero-card">
+        <div>
+          <p class="eyebrow">Saúde financeira</p>
+          <h2>Visão clara do desempenho da empresa em tempo real.</h2>
+          <p>
+            Receita, margem, fluxo de caixa e despesas consolidadas em um painel moderno, pensado para decisões rápidas e estratégicas.
+          </p>
+        </div>
+        <div class="hero-metric">
+          <span>Saldo líquido</span>
+          <strong data-target="1842500">R$ 0</strong>
+          <small>Consolidado até hoje</small>
+        </div>
+      </section>
+
+      <section class="kpi-grid">
+        <article class="card kpi-card">
+          <div class="card-head">
+            <span>Receita mensal</span>
+            <span class="trend up">+12,4%</span>
+          </div>
+          <h3 data-target="284000">R$ 0</h3>
+          <p>Receita acumulada no mês</p>
+        </article>
+        <article class="card kpi-card">
+          <div class="card-head">
+            <span>EBITDA</span>
+            <span class="trend up">+8,1%</span>
+          </div>
+          <h3 data-target="96200">R$ 0</h3>
+          <p>Margem operacional saudável</p>
+        </article>
+        <article class="card kpi-card">
+          <div class="card-head">
+            <span>Fluxo de caixa</span>
+            <span class="trend up">+5,2%</span>
+          </div>
+          <h3 data-target="42800">R$ 0</h3>
+          <p>Disponibilidade operacional</p>
+        </article>
+        <article class="card kpi-card">
+          <div class="card-head">
+            <span>Margem líquida</span>
+            <span class="trend up">+1,2%</span>
+          </div>
+          <h3 data-target="18.6">0%</h3>
+          <p>Eficiência final do negócio</p>
+        </article>
+      </section>
+
+      <section class="main-grid">
+        <article class="card chart-card">
+          <div class="card-head">
+            <span>Tendência de receita</span>
+            <span class="badge">Últimos 6 meses</span>
+          </div>
+          <svg viewBox="0 0 540 220" class="line-chart" aria-label="Gráfico de receita">
+            <defs>
+              <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#30d5c8" />
+                <stop offset="100%" stop-color="#6a5cff" />
+              </linearGradient>
+            </defs>
+            <g class="grid-lines">
+              <line x1="20" y1="40" x2="520" y2="40"></line>
+              <line x1="20" y1="90" x2="520" y2="90"></line>
+              <line x1="20" y1="140" x2="520" y2="140"></line>
+              <line x1="20" y1="190" x2="520" y2="190"></line>
+            </g>
+            <path class="chart-area" d="M20,170 L20,150 C70,145 90,120 120,125 C160,130 180,80 220,88 C260,96 280,150 320,132 C360,116 390,78 430,86 C470,94 490,110 520,70 L520,190 L20,190 Z"></path>
+            <path class="chart-line" d="M20,150 C70,145 90,120 120,125 C160,130 180,80 220,88 C260,96 280,150 320,132 C360,116 390,78 430,86 C470,94 490,110 520,70"></path>
+            <g class="chart-points">
+              <circle cx="120" cy="125" r="5"></circle>
+              <circle cx="220" cy="88" r="5"></circle>
+              <circle cx="320" cy="132" r="5"></circle>
+              <circle cx="430" cy="86" r="5"></circle>
+              <circle cx="520" cy="70" r="5"></circle>
+            </g>
+          </svg>
+          <div class="chart-labels">
+            <span>Jan</span><span>Fev</span><span>Mar</span><span>Abr</span><span>Mai</span><span>Jun</span>
+          </div>
+        </article>
+
+        <article class="card insights-card">
+          <div class="card-head">
+            <span>Indicadores-chave</span>
+            <span class="badge">Em dia</span>
+          </div>
+          <ul class="insight-list">
+            <li><strong>90%</strong><span>de contas a receber em dia</span></li>
+            <li><strong>7,3x</strong><span>cobertura de dívidas de curto prazo</span></li>
+            <li><strong>R$ 48K</strong><span>economia em custos operacionais</span></li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="bottom-grid">
+        <article class="card">
+          <div class="card-head">
+            <span>Estrutura de despesas</span>
+            <span class="badge">Hoje</span>
+          </div>
+          <div class="bar-list">
+            <div class="bar-item"><span>Equipe</span><div class="bar"><i style="width: 76%"></i></div><strong>76%</strong></div>
+            <div class="bar-item"><span>Marketing</span><div class="bar"><i style="width: 48%"></i></div><strong>48%</strong></div>
+            <div class="bar-item"><span>Operação</span><div class="bar"><i style="width: 61%"></i></div><strong>61%</strong></div>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-head">
+            <span>Alertas financeiros</span>
+            <span class="badge alert">2 pendências</span>
+          </div>
+          <ul class="alert-list">
+            <li>Pagamento de fornecedor vence em 2 dias</li>
+            <li>Meta de cobrança de 95% ainda não atingida</li>
+          </ul>
+        </article>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
