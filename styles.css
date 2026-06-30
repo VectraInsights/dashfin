@@ -89,6 +89,81 @@ button {
   cursor: pointer;
 }
 
+button.secondary {
+  background: rgba(255,255,255,0.08);
+  color: var(--text);
+}
+
+.editor-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 10;
+}
+
+.editor-overlay.hidden {
+  display: none;
+}
+
+.editor-panel {
+  width: min(100%, 920px);
+  background: rgba(10, 20, 35, 0.96);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 24px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.45);
+  overflow: hidden;
+}
+
+.editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 28px;
+  gap: 16px;
+}
+
+.editor-body {
+  padding: 0 28px 24px;
+  display: grid;
+  gap: 18px;
+  max-height: 70vh;
+  overflow: auto;
+}
+
+.editor-actions {
+  display: flex;
+  gap: 14px;
+  padding: 0 28px 24px;
+}
+
+.editor-body input,
+.editor-body textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.close-button {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 1.8rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+
 .hero-card {
   display: flex;
   justify-content: space-between;

@@ -25,7 +25,8 @@
         </div>
         <div class="topbar-actions">
           <div class="pill">+12,4% vs. mês anterior</div>
-          <button>Exportar relatório</button>
+          <button id="openEditor">Editar dados</button>
+          <button id="downloadCsv">Exportar CSV</button>
         </div>
       </header>
 
@@ -140,6 +141,23 @@
         </article>
       </section>
     </main>
+
+    <div class="editor-overlay hidden" id="editorOverlay">
+      <div class="editor-panel">
+        <div class="editor-header">
+          <div>
+            <p class="eyebrow">Editor de planilha</p>
+            <h3>Atualize os KPIs sem precisar do GitHub</h3>
+          </div>
+          <button id="closeEditor" class="close-button" aria-label="Fechar">×</button>
+        </div>
+        <div class="editor-body" id="editorBody"></div>
+        <div class="editor-actions">
+          <button id="saveData" class="primary">Salvar no navegador</button>
+          <button id="resetData">Resetar local</button>
+        </div>
+      </div>
+    </div>
 
     <script src="script.js"></script>
   </body>

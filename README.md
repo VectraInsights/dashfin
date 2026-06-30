@@ -18,6 +18,8 @@ Depois acesse: http://localhost:3000
 
 O dashboard lê dados de um arquivo CSV chamado `data.csv` por padrão.
 
+Também é possível editar os dados diretamente no painel, usando o botão `Editar dados`. O conteúdo é salvo localmente no navegador, então você não precisa fazer GitHub + push para cada alteração.
+
 Para usar o Google Sheets, publique a planilha como CSV e abra a página com o parâmetro `sheet`:
 
 ```text
