@@ -14,6 +14,16 @@ python -m http.server 3000
 
 Depois acesse: http://localhost:3000
 
+## Conexão com planilha
+
+O dashboard lê dados de um arquivo CSV chamado `data.csv` por padrão.
+
+Para usar o Google Sheets, publique a planilha como CSV e abra a página com o parâmetro `sheet`:
+
+```text
+http://localhost:3000/?sheet=https://docs.google.com/spreadsheets/d/SEU_ID/export?format=csv&gid=0
+```
+
 ## Deploy no Vercel
 
 1. Envie este projeto para o GitHub.

@@ -39,7 +39,7 @@
         </div>
         <div class="hero-metric">
           <span>Saldo líquido</span>
-          <strong data-target="1842500">R$ 0</strong>
+          <strong data-field="saldo_liquido" data-format="currency">Carregando...</strong>
           <small>Consolidado até hoje</small>
         </div>
       </section>
@@ -50,7 +50,7 @@
             <span>Receita mensal</span>
             <span class="trend up">+12,4%</span>
           </div>
-          <h3 data-target="284000">R$ 0</h3>
+          <h3 data-field="receita_mensal" data-format="currency">Carregando...</h3>
           <p>Receita acumulada no mês</p>
         </article>
         <article class="card kpi-card">
@@ -58,7 +58,7 @@
             <span>EBITDA</span>
             <span class="trend up">+8,1%</span>
           </div>
-          <h3 data-target="96200">R$ 0</h3>
+          <h3 data-field="ebitda" data-format="currency">Carregando...</h3>
           <p>Margem operacional saudável</p>
         </article>
         <article class="card kpi-card">
@@ -66,7 +66,7 @@
             <span>Fluxo de caixa</span>
             <span class="trend up">+5,2%</span>
           </div>
-          <h3 data-target="42800">R$ 0</h3>
+          <h3 data-field="fluxo_caixa" data-format="currency">Carregando...</h3>
           <p>Disponibilidade operacional</p>
         </article>
         <article class="card kpi-card">
@@ -74,7 +74,7 @@
             <span>Margem líquida</span>
             <span class="trend up">+1,2%</span>
           </div>
-          <h3 data-target="18.6">0%</h3>
+          <h3 data-field="margem_liquida" data-format="percent">Carregando...</h3>
           <p>Eficiência final do negócio</p>
         </article>
       </section>
@@ -133,21 +133,10 @@
             <span class="badge">Hoje</span>
           </div>
           <div class="bar-list">
-            <div class="bar-item"><span>Equipe</span><div class="bar"><i style="width: 76%"></i></div><strong>76%</strong></div>
-            <div class="bar-item"><span>Marketing</span><div class="bar"><i style="width: 48%"></i></div><strong>48%</strong></div>
-            <div class="bar-item"><span>Operação</span><div class="bar"><i style="width: 61%"></i></div><strong>61%</strong></div>
+            <div class="bar-item"><span>Equipe</span><div class="bar"><i data-field="equipe" data-format="percent"></i></div><strong data-field="equipe" data-format="percent">Carregando...</strong></div>
+            <div class="bar-item"><span>Marketing</span><div class="bar"><i data-field="marketing" data-format="percent"></i></div><strong data-field="marketing" data-format="percent">Carregando...</strong></div>
+            <div class="bar-item"><span>Operação</span><div class="bar"><i data-field="operacao" data-format="percent"></i></div><strong data-field="operacao" data-format="percent">Carregando...</strong></div>
           </div>
-        </article>
-
-        <article class="card">
-          <div class="card-head">
-            <span>Alertas financeiros</span>
-            <span class="badge alert">2 pendências</span>
-          </div>
-          <ul class="alert-list">
-            <li>Pagamento de fornecedor vence em 2 dias</li>
-            <li>Meta de cobrança de 95% ainda não atingida</li>
-          </ul>
         </article>
       </section>
     </main>
