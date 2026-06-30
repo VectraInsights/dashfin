@@ -361,11 +361,9 @@ const generateEditor = (csv) => {
   editorBody.appendChild(form);
 
   const info = document.createElement('p');
-  info.style.color = 'var(--muted)';
-  info.style.fontSize = '0.95rem';
-  info.style.margin = '0';
+  info.className = 'editor-note';
   info.textContent =
-    'Preencha cada célula com o valor correto. O nome exato da chave está à esquerda e o formato esperado aparece embaixo.';
+    'Use o modelo em português com separador ponto e vírgula (chave;valor;formato). O editor identifica automaticamente os dados.';
   editorBody.appendChild(info);
 
   const fileInput = uploadLabel.querySelector('input');
