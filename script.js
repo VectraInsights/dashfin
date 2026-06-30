@@ -497,7 +497,7 @@ const initEditor = () => {
 
   const downloadTemplate = document.getElementById('downloadTemplate');
   downloadTemplate.addEventListener('click', () => {
-    const template = `key;value;format
+    const template = `chave;valor;formato
 saldo_liquido;1842500;currency
 receita_mensal;284000;currency
 ebitda;96200;currency

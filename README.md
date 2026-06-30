@@ -23,7 +23,7 @@ Também é possível editar os dados diretamente no painel, usando o botão `Edi
 - upload de um arquivo CSV ou Excel (`.xls`, `.xlsx`, `.xlsm`, `.xlsb`) com os dados da planilha;
 - importação por URL pública CSV / Google Sheets;
 - exportar uma planilha padrão para preencher e importar novamente;
-- baixar um modelo CSV com as colunas corretas (uso de ponto e vírgula `;` para Excel em português).
+- baixar um modelo CSV com as colunas corretas em português (uso de ponto e vírgula `;` para Excel em português).
 
 O conteúdo também pode ser salvo localmente no navegador, então você não precisa fazer GitHub + push para cada alteração.
 
