@@ -68,11 +68,43 @@ const animateValue = (element, target, formatType) => {
   requestAnimationFrame(step);
 };
 
+const parseCsvRow = (line, delimiter) => {
+  const values = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+    if (char === delimiter && !inQuotes) {
+      values.push(current);
+      current = '';
+      continue;
+    }
+    current += char;
+  }
+  values.push(current);
+  return values.map((value) => value.trim());
+};
+
 const parseCsv = (text) => {
-  const rows = text.trim().split(/\r?\n/).filter(Boolean);
-  const headers = rows[0].split(',').map((header) => header.trim());
+  const sanitized = text.replace(/\uFEFF/g, '').trim();
+  const rows = sanitized.split(/\r?\n/).filter((row) => row.trim() !== '');
+  if (!rows.length) return [];
+
+  const delimiter = rows[0].includes(';') && !rows[0].includes(',') ? ';' : ',';
+  const headers = parseCsvRow(rows[0], delimiter).map((header) => header.trim());
+
   return rows.slice(1).map((row) => {
-    const values = row.split(',').map((value) => value.trim());
+    const values = parseCsvRow(row, delimiter);
     return headers.reduce((acc, header, index) => {
       acc[header] = values[index] ?? '';
       return acc;
@@ -106,6 +138,32 @@ const saveLocalCsv = (csv) => {
   localStorage.setItem(localStorageKey, csv);
 };
 
+const showNotification = (message, duration = 3200) => {
+  let notification = document.getElementById('dashboardNotification');
+  if (!notification) {
+    notification = document.createElement('div');
+    notification.id = 'dashboardNotification';
+    notification.style.position = 'fixed';
+    notification.style.right = '20px';
+    notification.style.bottom = '20px';
+    notification.style.padding = '14px 18px';
+    notification.style.borderRadius = '16px';
+    notification.style.background = 'rgba(15, 35, 60, 0.95)';
+    notification.style.color = '#fff';
+    notification.style.boxShadow = '0 24px 60px rgba(0,0,0,0.35)';
+    notification.style.zIndex = '20';
+    notification.style.maxWidth = '320px';
+    notification.style.fontSize = '0.95rem';
+    notification.style.lineHeight = '1.4';
+    document.body.appendChild(notification);
+  }
+  notification.textContent = message;
+  notification.style.opacity = '1';
+  setTimeout(() => {
+    notification.style.opacity = '0';
+  }, duration);
+};
+
 const generateEditor = (csv) => {
   const editorBody = document.getElementById('editorBody');
   editorBody.innerHTML = '';
@@ -117,7 +175,8 @@ const generateEditor = (csv) => {
 
   const urlLabel = document.createElement('label');
   urlLabel.className = 'editor-input-label';
-  urlLabel.innerHTML = 'Importar URL (Google Sheets ou CSV público) <input type="url" id="csvUrl" placeholder="https://docs.google.com/spreadsheets/d/ID/export?format=csv&gid=0" />';
+  urlLabel.innerHTML =
+    'Importar URL (Google Sheets ou CSV público) <input type="url" id="csvUrl" placeholder="https://docs.google.com/spreadsheets/d/ID/export?format=csv&gid=0" />';
   editorBody.appendChild(urlLabel);
 
   const importButton = document.createElement('button');
@@ -137,8 +196,8 @@ const generateEditor = (csv) => {
   info.style.color = 'var(--muted)';
   info.style.fontSize = '0.95rem';
   info.style.margin = '0';
-  info.textContent = 'Você pode fazer upload de um arquivo CSV ou colar o link de uma planilha pública.
-  Depois clique em Salvar no navegador para aplicar os dados.';
+  info.textContent =
+    'Use upload de CSV ou cole o link de uma planilha pública. Depois clique em Salvar no navegador para carregar os dados.';
   editorBody.appendChild(info);
 
   const fileInput = uploadLabel.querySelector('input');
@@ -148,6 +207,7 @@ const generateEditor = (csv) => {
     const reader = new FileReader();
     reader.onload = () => {
       textArea.value = reader.result;
+      showNotification('CSV carregado no editor. Clique em Salvar para aplicar.');
     };
     reader.readAsText(file, 'UTF-8');
   });
@@ -155,7 +215,10 @@ const generateEditor = (csv) => {
   importButton.addEventListener('click', () => {
     const urlInput = document.getElementById('csvUrl');
     const url = urlInput.value.trim();
-    if (!url) return;
+    if (!url) {
+      showNotification('Cole a URL do CSV ou do Google Sheets antes de importar.');
+      return;
+    }
     fetch(url)
       .then((res) => {
         if (!res.ok) throw new Error('URL inválida ou planilha indisponível');
@@ -164,10 +227,11 @@ const generateEditor = (csv) => {
       .then((csvText) => {
         textArea.value = csvText;
         applyData(csvText);
+        showNotification('Planilha importada com sucesso.');
       })
       .catch((error) => {
         console.error(error);
-        alert('Não foi possível importar o CSV. Verifique a URL.');
+        showNotification('Não foi possível importar o CSV. Verifique a URL.');
       });
   });
 };
@@ -224,6 +288,27 @@ const initEditor = () => {
     const link = document.createElement('a');
     link.href = URL.createObjectURL(new Blob([csvText], { type: 'text/csv' }));
     link.download = 'dashboard-data.csv';
+    link.click();
+  });
+
+  const downloadTemplate = document.getElementById('downloadTemplate');
+  downloadTemplate.addEventListener('click', () => {
+    const template = `key,value,format
+saldo_liquido,1842500,currency
+receita_mensal,284000,currency
+ebitda,96200,currency
+fluxo_caixa,42800,currency
+margem_liquida,18.6,percent
+contas_receber,90,percent
+cobertura_dividas,7.3,decimal-x
+economia_custos,48000,currency-short
+equipe,76,percent
+marketing,48,percent
+operacao,61,percent
+`;
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([template], { type: 'text/csv' }));
+    link.download = 'template-dashboard.csv';
     link.click();
   });
 };

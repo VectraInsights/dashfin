@@ -23,7 +23,7 @@ Também é possível editar os dados diretamente no painel, usando o botão `Edi
 - upload de um arquivo CSV com os dados da planilha;
 - importação por URL pública CSV / Google Sheets;
 - exportar uma planilha padrão para preencher e importar novamente;
-- usar o arquivo `template.csv` que está incluído no projeto.
+- baixar um modelo CSV com as colunas corretas.
 
 O conteúdo também pode ser salvo localmente no navegador, então você não precisa fazer GitHub + push para cada alteração.
 
