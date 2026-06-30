@@ -95,41 +95,111 @@ const parseCsvRow = (line, delimiter) => {
   return values.map((value) => value.trim());
 };
 
+const normalizeHeader = (text) =>
+  String(text || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .replace(/[^a-z0-9\s_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const createFieldLookup = () => {
+  const lookup = new Map();
+  csvSchema.forEach((field) => {
+    lookup.set(normalizeHeader(field.key), field.key);
+    lookup.set(normalizeHeader(field.label), field.key);
+    lookup.set(normalizeHeader(field.label.replace('%', ' percent')), field.key);
+  });
+  return lookup;
+};
+
+const fieldLookup = createFieldLookup();
+
+const getSchemaField = (key) => csvSchema.find((field) => field.key === key);
+
+const tryMatchFieldKey = (value) => {
+  const normalized = normalizeHeader(value);
+  return fieldLookup.get(normalized) || null;
+};
+
+const parseTableRows = (rows) => {
+  const cleaned = rows.map((row) => row.map((cell) => (cell == null ? '' : String(cell).trim())));
+  const nonEmpty = cleaned.filter((row) => row.some((cell) => cell !== ''));
+  if (!nonEmpty.length) return [];
+
+  const headerRow = nonEmpty[0].map((cell) => normalizeHeader(cell));
+  const keyIndex = headerRow.findIndex((cell) => ['key', 'chave'].includes(cell));
+  const valueIndex = headerRow.findIndex((cell) => ['value', 'valor', 'amount', 'quantia', 'quantidade'].includes(cell));
+  const formatIndex = headerRow.findIndex((cell) => ['format', 'formato', 'tipo'].includes(cell));
+
+  if (keyIndex !== -1 && valueIndex !== -1) {
+    return nonEmpty.slice(1).reduce((items, row) => {
+      const key = String(row[keyIndex] || '').trim();
+      if (!key) return items;
+      items.push({
+        key,
+        value: row[valueIndex] ?? '',
+        format: row[formatIndex] || getSchemaField(key)?.format || 'number',
+      });
+      return items;
+    }, []);
+  }
+
+  const mappedHeaders = headerRow.map((cell) => tryMatchFieldKey(cell));
+  const matchedHeaders = mappedHeaders
+    .map((key, index) => ({ key, index }))
+    .filter((field) => field.key);
+
+  if (matchedHeaders.length >= 2 && nonEmpty.length > 1) {
+    return matchedHeaders.map(({ key, index }) => ({
+      key,
+      value: nonEmpty[1][index] ?? '',
+      format: getSchemaField(key)?.format || 'number',
+    }));
+  }
+
+  const verticalItems = nonEmpty.reduce((items, row) => {
+    const key = tryMatchFieldKey(row[0]);
+    if (!key) return items;
+    items.push({
+      key,
+      value: row[1] ?? '',
+      format: row[2] || getSchemaField(key)?.format || 'number',
+    });
+    return items;
+  }, []);
+
+  if (verticalItems.length >= 3) {
+    return verticalItems;
+  }
+
+  const fallback = nonEmpty.slice(1).reduce((items, row) => {
+    const key = tryMatchFieldKey(row[0]);
+    if (!key) return items;
+    items.push({
+      key,
+      value: row[1] ?? '',
+      format: row[2] || getSchemaField(key)?.format || 'number',
+    });
+    return items;
+  }, []);
+
+  return fallback;
+};
+
 const parseCsv = (text) => {
   const sanitized = text.replace(/\uFEFF/g, '').trim();
-  const rows = sanitized.split(/\r?\n/).filter((row) => row.trim() !== '');
-  if (!rows.length) return [];
+  const rows = sanitized
+    .split(/\r?\n/)
+    .filter((row) => row.trim() !== '')
+    .map((row) => {
+      const delimiter = row.includes(';') && !row.includes(',') ? ';' : ',';
+      return parseCsvRow(row, delimiter);
+    });
 
-  const delimiter = rows[0].includes(';') && !rows[0].includes(',') ? ';' : ',';
-  const headers = parseCsvRow(rows[0], delimiter).map((header) => header.trim());
-
-  return rows.slice(1).map((row) => {
-    const values = parseCsvRow(row, delimiter);
-    return headers.reduce((acc, header, index) => {
-      acc[header] = values[index] ?? '';
-      return acc;
-    }, {});
-  });
-};
-
-const getCsvHeaders = (text) => {
-  const sanitized = text.replace(/\uFEFF/g, '').trim();
-  const rows = sanitized.split(/\r?\n/).filter((row) => row.trim() !== '');
-  if (!rows.length) return [];
-
-  const delimiter = rows[0].includes(';') && !rows[0].includes(',') ? ';' : ',';
-  return parseCsvRow(rows[0], delimiter).map((header) => header.trim().toLowerCase());
-};
-
-const validateCsv = (text) => {
-  const headers = getCsvHeaders(text);
-  const expected = ['key', 'value', 'format'];
-  const missing = expected.filter((header) => !headers.includes(header));
-  return {
-    valid: missing.length === 0,
-    missing,
-    headers,
-  };
+  return parseTableRows(rows);
 };
 
 const parseExcelFile = (file) => {
@@ -145,8 +215,8 @@ const parseExcelFile = (file) => {
           reject(new Error('Nenhuma planilha encontrada no arquivo Excel.'));
           return;
         }
-        const csvText = XLSX.utils.sheet_to_csv(sheet, { FS: ',' });
-        resolve(csvText);
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+        resolve(parseTableRows(rows));
       } catch (error) {
         reject(error);
       }
@@ -310,27 +380,35 @@ const generateEditor = (csv) => {
       showNotification('Dados carregados no editor. Clique em Salvar para aplicar.');
     };
 
-    const processCsvText = (csvText) => {
-      const validation = validateCsv(csvText);
-      if (!validation.valid) {
-        showNotification(
-          `Cabeçalhos inválidos: faltam ${validation.missing.join(', ')}. Use o modelo correto.`
-        );
+    const handleAnyText = (csvText) => {
+      const parsed = parseCsv(csvText);
+      if (!parsed.length) {
+        showNotification('Não foi possível identificar os dados na planilha. Confira os cabeçalhos ou o formato.');
         return;
       }
-      handleCsv(csvText);
+      const metrics = Object.fromEntries(parsed.map((row) => [row.key, row]));
+      editorBody.querySelector('.editor-grid').replaceWith(buildMetricForm(metrics));
+      showNotification('Dados carregados no editor. Clique em Salvar para aplicar.');
     };
 
     if (extension === 'xls' || extension === 'xlsx' || extension === 'xlsm' || extension === 'xlsb') {
       parseExcelFile(file)
-        .then(processCsvText)
+        .then((parsed) => {
+          if (!parsed.length) {
+            showNotification('Não foi possível identificar os dados no Excel. Verifique a planilha.');
+            return;
+          }
+          const metrics = Object.fromEntries(parsed.map((row) => [row.key, row]));
+          editorBody.querySelector('.editor-grid').replaceWith(buildMetricForm(metrics));
+          showNotification('Dados carregados no editor. Clique em Salvar para aplicar.');
+        })
         .catch((error) => {
           console.error(error);
           showNotification('Não foi possível ler o arquivo Excel. Verifique o formato.');
         });
     } else {
       const reader = new FileReader();
-      reader.onload = () => processCsvText(reader.result);
+      reader.onload = () => handleAnyText(reader.result);
       reader.onerror = () => showNotification('Não foi possível ler o arquivo CSV.');
       reader.readAsText(file, 'UTF-8');
     }
@@ -349,14 +427,11 @@ const generateEditor = (csv) => {
         return res.text();
       })
       .then((csvText) => {
-        const validation = validateCsv(csvText);
-        if (!validation.valid) {
-          showNotification(
-            `Cabeçalhos inválidos: faltam ${validation.missing.join(', ')}. Use o modelo correto.`
-          );
+        const parsed = parseCsv(csvText);
+        if (!parsed.length) {
+          showNotification('Não foi possível identificar os dados na planilha. Verifique o arquivo ou o URL.');
           return;
         }
-        const parsed = parseCsv(csvText);
         const metrics = Object.fromEntries(parsed.map((row) => [row.key, row]));
         editorBody.querySelector('.editor-grid').replaceWith(buildMetricForm(metrics));
         showNotification('Planilha importada com sucesso.');
@@ -422,18 +497,18 @@ const initEditor = () => {
 
   const downloadTemplate = document.getElementById('downloadTemplate');
   downloadTemplate.addEventListener('click', () => {
-    const template = `key,value,format
-saldo_liquido,1842500,currency
-receita_mensal,284000,currency
-ebitda,96200,currency
-fluxo_caixa,42800,currency
-margem_liquida,18.6,percent
-contas_receber,90,percent
-cobertura_dividas,7.3,decimal-x
-economia_custos,48000,currency-short
-equipe,76,percent
-marketing,48,percent
-operacao,61,percent
+    const template = `key;value;format
+saldo_liquido;1842500;currency
+receita_mensal;284000;currency
+ebitda;96200;currency
+fluxo_caixa;42800;currency
+margem_liquida;18.6;percent
+contas_receber;90;percent
+cobertura_dividas;7.3;decimal-x
+economia_custos;48000;currency-short
+equipe;76;percent
+marketing;48;percent
+operacao;61;percent
 `;
     const link = document.createElement('a');
     link.href = URL.createObjectURL(new Blob([template], { type: 'text/csv' }));
