@@ -20,7 +20,7 @@ O dashboard lê dados de um arquivo CSV chamado `data.csv` por padrão.
 
 Também é possível editar os dados diretamente no painel, usando o botão `Editar dados`. O painel permite:
 
-- upload de um arquivo CSV com os dados da planilha;
+- upload de um arquivo CSV ou Excel (`.xls`, `.xlsx`, `.xlsm`, `.xlsb`) com os dados da planilha;
 - importação por URL pública CSV / Google Sheets;
 - exportar uma planilha padrão para preencher e importar novamente;
 - baixar um modelo CSV com as colunas corretas.

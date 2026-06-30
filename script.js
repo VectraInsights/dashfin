@@ -112,6 +112,50 @@ const parseCsv = (text) => {
   });
 };
 
+const getCsvHeaders = (text) => {
+  const sanitized = text.replace(/\uFEFF/g, '').trim();
+  const rows = sanitized.split(/\r?\n/).filter((row) => row.trim() !== '');
+  if (!rows.length) return [];
+
+  const delimiter = rows[0].includes(';') && !rows[0].includes(',') ? ';' : ',';
+  return parseCsvRow(rows[0], delimiter).map((header) => header.trim().toLowerCase());
+};
+
+const validateCsv = (text) => {
+  const headers = getCsvHeaders(text);
+  const expected = ['key', 'value', 'format'];
+  const missing = expected.filter((header) => !headers.includes(header));
+  return {
+    valid: missing.length === 0,
+    missing,
+    headers,
+  };
+};
+
+const parseExcelFile = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        if (!sheet) {
+          reject(new Error('Nenhuma planilha encontrada no arquivo Excel.'));
+          return;
+        }
+        const csvText = XLSX.utils.sheet_to_csv(sheet, { FS: ',' });
+        resolve(csvText);
+      } catch (error) {
+        reject(error);
+      }
+    };
+    reader.onerror = () => reject(new Error('Falha ao ler o arquivo Excel.'));
+    reader.readAsArrayBuffer(file);
+  });
+};
+
 const populateDashboard = (data) => {
   const metrics = Object.fromEntries(data.map((row) => [row.key, row]));
 
@@ -129,6 +173,20 @@ const localStorageKey = 'dashboard-data-csv';
 const defaultCsv = './data.csv';
 const sheetUrl = new URLSearchParams(window.location.search).get('sheet');
 const source = sheetUrl ? sheetUrl : null;
+
+const csvSchema = [
+  { key: 'saldo_liquido', label: 'Saldo líquido', format: 'currency', placeholder: '1842500' },
+  { key: 'receita_mensal', label: 'Receita mensal', format: 'currency', placeholder: '284000' },
+  { key: 'ebitda', label: 'EBITDA', format: 'currency', placeholder: '96200' },
+  { key: 'fluxo_caixa', label: 'Fluxo de caixa', format: 'currency', placeholder: '42800' },
+  { key: 'margem_liquida', label: 'Margem líquida', format: 'percent', placeholder: '18.6' },
+  { key: 'contas_receber', label: 'Contas a receber em dia', format: 'percent', placeholder: '90' },
+  { key: 'cobertura_dividas', label: 'Cobertura de dívidas (x)', format: 'decimal-x', placeholder: '7.3' },
+  { key: 'economia_custos', label: 'Economia em custos', format: 'currency-short', placeholder: '48000' },
+  { key: 'equipe', label: 'Equipe (%)', format: 'percent', placeholder: '76' },
+  { key: 'marketing', label: 'Marketing (%)', format: 'percent', placeholder: '48' },
+  { key: 'operacao', label: 'Operação (%)', format: 'percent', placeholder: '61' },
+];
 
 const loadLocalCsv = () => {
   return localStorage.getItem(localStorageKey);
@@ -164,13 +222,55 @@ const showNotification = (message, duration = 3200) => {
   }, duration);
 };
 
+const buildMetricForm = (metrics = {}) => {
+  const container = document.createElement('div');
+  container.className = 'editor-grid';
+
+  csvSchema.forEach((field) => {
+    const row = document.createElement('div');
+    row.className = 'editor-row';
+
+    const label = document.createElement('label');
+    label.textContent = field.label;
+    label.htmlFor = `field-${field.key}`;
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = `field-${field.key}`;
+    input.dataset.key = field.key;
+    input.placeholder = field.placeholder;
+    input.value = metrics[field.key] ? metrics[field.key].value || metrics[field.key] : '';
+
+    const hint = document.createElement('span');
+    hint.className = 'field-hint';
+    hint.textContent = field.format;
+
+    row.appendChild(label);
+    row.appendChild(input);
+    row.appendChild(hint);
+    container.appendChild(row);
+  });
+
+  return container;
+};
+
+const getFormCsv = () => {
+  const lines = ['key,value,format'];
+  csvSchema.forEach((field) => {
+    const input = document.querySelector(`input[data-key="${field.key}"]`);
+    const value = input ? input.value.trim() : '';
+    lines.push(`${field.key},${value},${field.format}`);
+  });
+  return lines.join('\n');
+};
+
 const generateEditor = (csv) => {
   const editorBody = document.getElementById('editorBody');
   editorBody.innerHTML = '';
 
   const uploadLabel = document.createElement('label');
   uploadLabel.className = 'editor-input-label';
-  uploadLabel.innerHTML = 'Upload CSV <input type="file" id="csvUpload" accept=".csv" />';
+  uploadLabel.innerHTML = 'Upload CSV ou Excel <input type="file" id="csvUpload" accept=".csv,.xlsx,.xls,.xlsm,.xlsb" />';
   editorBody.appendChild(uploadLabel);
 
   const urlLabel = document.createElement('label');
@@ -186,30 +286,54 @@ const generateEditor = (csv) => {
   importButton.textContent = 'Importar URL';
   editorBody.appendChild(importButton);
 
-  const textArea = document.createElement('textarea');
-  textArea.rows = 12;
-  textArea.value = csv;
-  textArea.id = 'dataCsvEditor';
-  editorBody.appendChild(textArea);
+  const metrics = Object.fromEntries(parseCsv(csv).map((row) => [row.key, row]));
+  const form = buildMetricForm(metrics);
+  editorBody.appendChild(form);
 
   const info = document.createElement('p');
   info.style.color = 'var(--muted)';
   info.style.fontSize = '0.95rem';
   info.style.margin = '0';
   info.textContent =
-    'Use upload de CSV ou cole o link de uma planilha pública. Depois clique em Salvar no navegador para carregar os dados.';
+    'Preencha cada célula com o valor correto. O nome exato da chave está à esquerda e o formato esperado aparece embaixo.';
   editorBody.appendChild(info);
 
   const fileInput = uploadLabel.querySelector('input');
   fileInput.addEventListener('change', (event) => {
     const file = event.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      textArea.value = reader.result;
-      showNotification('CSV carregado no editor. Clique em Salvar para aplicar.');
+    const extension = file.name.split('.').pop().toLowerCase();
+    const handleCsv = (csvText) => {
+      const parsed = parseCsv(csvText);
+      const metrics = Object.fromEntries(parsed.map((row) => [row.key, row]));
+      editorBody.querySelector('.editor-grid').replaceWith(buildMetricForm(metrics));
+      showNotification('Dados carregados no editor. Clique em Salvar para aplicar.');
     };
-    reader.readAsText(file, 'UTF-8');
+
+    const processCsvText = (csvText) => {
+      const validation = validateCsv(csvText);
+      if (!validation.valid) {
+        showNotification(
+          `Cabeçalhos inválidos: faltam ${validation.missing.join(', ')}. Use o modelo correto.`
+        );
+        return;
+      }
+      handleCsv(csvText);
+    };
+
+    if (extension === 'xls' || extension === 'xlsx' || extension === 'xlsm' || extension === 'xlsb') {
+      parseExcelFile(file)
+        .then(processCsvText)
+        .catch((error) => {
+          console.error(error);
+          showNotification('Não foi possível ler o arquivo Excel. Verifique o formato.');
+        });
+    } else {
+      const reader = new FileReader();
+      reader.onload = () => processCsvText(reader.result);
+      reader.onerror = () => showNotification('Não foi possível ler o arquivo CSV.');
+      reader.readAsText(file, 'UTF-8');
+    }
   });
 
   importButton.addEventListener('click', () => {
@@ -225,8 +349,16 @@ const generateEditor = (csv) => {
         return res.text();
       })
       .then((csvText) => {
-        textArea.value = csvText;
-        applyData(csvText);
+        const validation = validateCsv(csvText);
+        if (!validation.valid) {
+          showNotification(
+            `Cabeçalhos inválidos: faltam ${validation.missing.join(', ')}. Use o modelo correto.`
+          );
+          return;
+        }
+        const parsed = parseCsv(csvText);
+        const metrics = Object.fromEntries(parsed.map((row) => [row.key, row]));
+        editorBody.querySelector('.editor-grid').replaceWith(buildMetricForm(metrics));
         showNotification('Planilha importada com sucesso.');
       })
       .catch((error) => {
@@ -251,13 +383,11 @@ const initEditor = () => {
 
   const open = () => {
     editorOverlay.classList.remove('hidden');
-    if (!document.getElementById('dataCsvEditor')) {
-      const localCsv = loadLocalCsv();
-      if (localCsv) {
-        generateEditor(localCsv);
-      } else {
-        fetch(defaultCsv).then((res) => res.text()).then(generateEditor);
-      }
+    const localCsv = loadLocalCsv();
+    if (localCsv) {
+      generateEditor(localCsv);
+    } else {
+      fetch(defaultCsv).then((res) => res.text()).then(generateEditor);
     }
   };
 
@@ -265,10 +395,9 @@ const initEditor = () => {
   closeEditor.addEventListener('click', () => editorOverlay.classList.add('hidden'));
 
   saveData.addEventListener('click', () => {
-    const textArea = document.getElementById('dataCsvEditor');
-    if (!textArea) return;
-    saveLocalCsv(textArea.value);
-    applyData(textArea.value);
+    const csvText = getFormCsv();
+    saveLocalCsv(csvText);
+    applyData(csvText);
     editorOverlay.classList.add('hidden');
   });
 
@@ -283,7 +412,7 @@ const initEditor = () => {
   });
 
   downloadCsv.addEventListener('click', () => {
-    const csvText = document.getElementById('dataCsvEditor')?.value || loadLocalCsv() || '';
+    const csvText = document.querySelector('.editor-grid') ? getFormCsv() : loadLocalCsv() || '';
     if (!csvText) return;
     const link = document.createElement('a');
     link.href = URL.createObjectURL(new Blob([csvText], { type: 'text/csv' }));
