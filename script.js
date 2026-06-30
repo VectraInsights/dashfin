@@ -105,6 +105,20 @@ const normalizeHeader = (text) =>
     .replace(/\s+/g, ' ')
     .trim();
 
+const csvSchema = [
+  { key: 'saldo_liquido', label: 'Saldo líquido', format: 'currency', placeholder: '1842500' },
+  { key: 'receita_mensal', label: 'Receita mensal', format: 'currency', placeholder: '284000' },
+  { key: 'ebitda', label: 'EBITDA', format: 'currency', placeholder: '96200' },
+  { key: 'fluxo_caixa', label: 'Fluxo de caixa', format: 'currency', placeholder: '42800' },
+  { key: 'margem_liquida', label: 'Margem líquida', format: 'percent', placeholder: '18.6' },
+  { key: 'contas_receber', label: 'Contas a receber em dia', format: 'percent', placeholder: '90' },
+  { key: 'cobertura_dividas', label: 'Cobertura de dívidas (x)', format: 'decimal-x', placeholder: '7.3' },
+  { key: 'economia_custos', label: 'Economia em custos', format: 'currency-short', placeholder: '48000' },
+  { key: 'equipe', label: 'Equipe (%)', format: 'percent', placeholder: '76' },
+  { key: 'marketing', label: 'Marketing (%)', format: 'percent', placeholder: '48' },
+  { key: 'operacao', label: 'Operação (%)', format: 'percent', placeholder: '61' },
+];
+
 const createFieldLookup = () => {
   const lookup = new Map();
   csvSchema.forEach((field) => {
@@ -243,20 +257,6 @@ const localStorageKey = 'dashboard-data-csv';
 const defaultCsv = './data.csv';
 const sheetUrl = new URLSearchParams(window.location.search).get('sheet');
 const source = sheetUrl ? sheetUrl : null;
-
-const csvSchema = [
-  { key: 'saldo_liquido', label: 'Saldo líquido', format: 'currency', placeholder: '1842500' },
-  { key: 'receita_mensal', label: 'Receita mensal', format: 'currency', placeholder: '284000' },
-  { key: 'ebitda', label: 'EBITDA', format: 'currency', placeholder: '96200' },
-  { key: 'fluxo_caixa', label: 'Fluxo de caixa', format: 'currency', placeholder: '42800' },
-  { key: 'margem_liquida', label: 'Margem líquida', format: 'percent', placeholder: '18.6' },
-  { key: 'contas_receber', label: 'Contas a receber em dia', format: 'percent', placeholder: '90' },
-  { key: 'cobertura_dividas', label: 'Cobertura de dívidas (x)', format: 'decimal-x', placeholder: '7.3' },
-  { key: 'economia_custos', label: 'Economia em custos', format: 'currency-short', placeholder: '48000' },
-  { key: 'equipe', label: 'Equipe (%)', format: 'percent', placeholder: '76' },
-  { key: 'marketing', label: 'Marketing (%)', format: 'percent', placeholder: '48' },
-  { key: 'operacao', label: 'Operação (%)', format: 'percent', placeholder: '61' },
-];
 
 const loadLocalCsv = () => {
   return localStorage.getItem(localStorageKey);
